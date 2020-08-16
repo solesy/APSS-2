@@ -1,0 +1,46 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+#include<map>
+using namespace std;
+map<int, int> coords;
+//새로운점(x,y)이 기준의 점들에 지배당하는지 확인한다.
+bool isDominated(int x, int y) {
+	auto it = coords.lower_bound(x);
+	if (it == coords.end()) return false;
+	return y < it->second;
+}
+//새로운점(x,y)가 지배하는점들을 지운다.
+void removeDominated(int x, int y) {
+	auto it = coords.lower_bound(x);
+	if (it == coords.begin()) return;
+	--it;
+	//반복문 불변식: it은 (x,y)의 바로 왼쪽에 있는 점.
+	//반복중에 iterator을 삭제하기 때문에 강조한다.
+	while (true) {
+		//it가 표시하는 점이 (x,y)에 지배되지 않는다면 바로 종료
+		if (it->second > y) break;
+		if (it == coords.begin()) {
+			coords.erase(it);
+			break;
+		}
+		//이전 점으로 이터레이터를 하나 옮겨놓고 it을 지운다.
+		else {
+			map<int, int>::iterator jt = it;
+			--jt;
+			coords.erase(it);
+			it = jt;
+		}
+	}
+}
+int main(void) {
+	
+}

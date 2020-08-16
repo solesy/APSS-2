@@ -1,0 +1,35 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<list>
+#include<string>
+#include<queue>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+using namespace std;
+void josephus(int n, int k) {
+	list<int> survivors;
+	for (int i = 1; i <= n; ++i) survivors.push_back(i);
+	//이번에 죽을 사람을 나타내는 포인터
+	list<int>::iterator kill = survivors.begin();
+	while (n > 2) {
+		//첫 번째 사람이 자살한다. erase()는 지운 원소의 다음 원소를 반환한다.
+		//[begin,end) 임을 유의하자.
+		kill = survivors.erase(kill);
+		//kill이 end()를 가르키고 있을 경우 begin으로 바꾼다.
+		if (kill == survivors.end()) kill = survivors.begin();
+		--n;
+		//kill을 k-1번 앞으로 옮긴다.
+		for (int i = 0; i < k - 1; ++i) {
+			++kill;
+			if (kill == survivors.end())kill = survivors.begin();
+		}
+	}
+	cout << survivors.front() << " " << survivors.back() << endl;
+}
+int main(void) {
+	//print 11 26
+	josephus(40, 3);
+}

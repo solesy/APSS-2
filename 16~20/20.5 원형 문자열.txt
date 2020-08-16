@@ -1,0 +1,75 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+#include <time.h>
+using namespace std;
+//functor
+//t를 기준으로한 그룹이 주어질 때, 2t를 기준으로 perm을 비교한다.
+//perm1가 속해야할 그룹 < perm2가 속해야할 그룹
+//일때 참을 반환한다.
+struct CompareGroup {
+	const vector<int> group;
+	int t;
+	CompareGroup(const vector<int>& _group, int _t) :group(_group), t(_t) {}
+	bool operator()(int perm1, int perm2) {
+		//t까지가 같다면, t+1 ~ 2t 까지 비교한다.(t+1의 out of range 주의)
+		if (group[perm1] == group[perm2]) return group[perm1 + t] < group[perm2 + t];
+		else return group[perm1] < group[perm2];
+	}
+};
+//t를 기준으로 한 group -> 2t를 기준으로 정렬한 perm을 얻음 -> 2t를 기준으로 한 group을 얻음.
+vector<int> getSuffixArray(const string& s) {
+	int n = s.size();
+	int t = 1;
+	//perm[i]: 사전순 i번째접미사의 시작위치, s[perm[i]...]
+	vector<int> perm(n);
+	for (int i = 0; i < n; ++i) perm[i] = i;
+	//group[i]: s[i...]가 속한 그룹번호, group[perm[i]]은 단조증가
+	vector<int> group(n + 1);
+	group[n] = -1;
+	for (int i = 0; i < n; ++i) group[i] = s[i];
+	//t=1을 기준으로한 group은 만들어 져있으므로 첫 2를 기준으로 정렬한 perm을 얻는것부터 시작한다.
+	while (t < n) {
+		//2t를 기준으로 정렬한 perm을 얻는다.
+		CompareGroup compare(group, t);
+		sort(perm.begin(), perm.end(), compare);
+		//2t를 기준으로 한 group을 얻는다. perm은 2t에 대해 정렬된 상태이다.
+		vector<int> newGroup(n + 1);
+		newGroup[n] = -1;
+		newGroup[perm[0]] = 0;
+		for (int i = 1; i < n; ++i) {
+			//perm1가 속해야할 그룹 < perm2가 속해야할 그룹
+			//일때 참을 반환한다.
+			if (compare(perm[i - 1], perm[i])) newGroup[perm[i]] = newGroup[perm[i - 1]] + 1;
+			//perm1이 속해야할 그룹 = perm2가 속해야할 그룹 이면
+			else newGroup[perm[i]] = newGroup[perm[i - 1]];
+		}
+		group = newGroup;
+		t *= 2;
+	}
+	return perm;
+}
+//사전순으로 가장 앞에오는 s의 회전 결과를 반환한다.
+string minShift(const string& s) {
+	int n = s.size();
+	string s2 = s + s;
+	//s2의 접미사 배열 중 길이가 n이상인 것 중
+	//제일 빨리 오는것을 구한다.
+	vector<int> s2SuffixArray = getSuffixArray(s2);
+	for (int i = 0; i < s2SuffixArray.size(); ++i)
+		if (s2SuffixArray[i] < n)
+			return s2.substr(s2SuffixArray[i], n);
+	//여기로 올 일은 없어야 한다.
+	return "opps";
+}
+int main(void) {
+	cout << minShift("vadakedavraa");
+}

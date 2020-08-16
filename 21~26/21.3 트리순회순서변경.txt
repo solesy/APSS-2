@@ -1,0 +1,20 @@
+//전위순회의 순서 preorder, 중위순회의 순서 inorder가 주어질 때
+//후위순회의 순서를 출력한다.
+//항상 루트의 좌측노드, 우측노드가 무엇인지 알고, 루트도 무엇인지 안다. => 당연히 가능하다...
+void printPostOrder(const vector<int>& preorder, const vector<int>& inorder) {
+	//기저1: inorder이 없다.
+	if (inorder.empty()) return;
+	//preorder[0]은 root므로 inorder에서 preorder[0]을 찾아낸다.
+	int root = preorder[0];
+	int L = find(inorder.begin(), inorder.end(), root) - inorder.begin();//distance
+	int R = inorder.size() - (L + 1);
+	//좌,우 순서로 출력한다.
+	vector<int> subPreorder1 = vector<int>(preorder.begin() + 1, preorder.begin() + L + 1);
+	vector<int> subInorder1 = vector<int>(inorder.begin(), inorder.begin() + L);
+	printPostOrder(subPreorder1, subInorder1);
+	vector<int> subPreorder2 = vector<int>(preorder.begin() + L + 1, preorder.end());
+	vector<int> subInorder2 = vector<int>(inorder.begin() + L + 1, inorder.end());
+	printPostOrder(subPreorder2, subInorder2);
+	//루트를 출력한다.
+	cout << root << ' ';
+}

@@ -1,0 +1,27 @@
+//a의 접미사이면서, b의 접두사인 문자열의 최대길이를 반환한다.kmp사용.
+int maxOverlap(const string& a, const string& b) {
+	int begin = 0, match = 0;
+	vector<int> pi = getPartialMatch(b);
+	int n = a.size();
+	while (match < n) {
+		//a[match]==b[match-begin]
+		if (a[match] == b[match - begin]) {
+			if (match == n - 1) return match - begin + 1;
+			++match;
+		}
+		else {
+			if (begin == match) {
+				++begin;
+				++match;
+			}
+			else
+				begin = match - pi[match - begin];
+		}
+	}
+	return 0;
+}
+int main(void) {
+	string a("aabaaba");
+	string b("abaabaa");
+	cout << maxOverlap(a, b);
+}

@@ -1,0 +1,49 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+using namespace std;
+struct RNG {
+	unsigned seed;
+	RNG() :seed(1983) {}
+	unsigned next() {
+		unsigned ret = seed;
+		//wrap around
+		//2^32=unsigned.max+1 이므로 2^32로 나눌 필요가 없다.
+		seed = ((seed * 214013u) + 2531011u);
+		return ret % 10000 + 1;
+	}
+};
+//n까지 구간중 부분합이 k인 경우의 수를 반환한다.
+int countRanges(int k, int n) {
+	RNG rng;
+	//ret: 경우의수, rangeSum: range의 합을 저장
+	int ret = 0, head = 1, rangeSum = 0;
+	queue<int> range;//구간의 숫자를 보관
+
+	//합이 k인 경우의 수를 계산한다.
+	//signal을 미리 만들어놔야한다.
+	for (int tail = 1; tail <= n; ++tail) {
+		unsigned signal = rng.next();
+		range.push(signal);
+		rangeSum += signal;
+		//합이 k이하가 될때까지 head를 늘인다.
+		while (rangeSum > k && head <= tail) {
+			++head;
+			rangeSum -= range.front();
+			range.pop();
+		}
+		if (rangeSum == k) ++ret;
+	}
+	return ret;
+}
+int main(void) {
+	printf("%d", countRanges(3578452, 5000000));
+}

@@ -1,0 +1,119 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+#include <time.h>
+using namespace std;
+struct Compare {
+	const vector<int>& group;
+	int t;
+	Compare(const vector<int>& _group, int _t) :group(_group), t(_t){}
+	//t를 기준으로 한 group이 주어졌을 때, 2t를 기준으로
+	//perm1이 해당되어야할 그룹 < perm2가 해당되어야 할 그룹
+	//일 때, 참을 반환한다.
+	bool operator()(int perm1, int perm2) {
+		if (group[perm1] == group[perm2])
+			return group[perm1 + t] < group[perm2 + t];//out of range에 유의
+		else
+			return group[perm1] < group[perm2];
+	}
+};
+//s의 접미사 배열을 반환한다.
+vector<int> getSuffixArray(const string& s) {
+	int n = s.size();
+	int t = 1;
+	//perm[i]: 사전순 i번째접미사의 시작위치 
+	vector<int> perm(n);
+	for (int i = 0; i < n; ++i) perm[i] = i;
+	//group[i]: s[i...]의 그룹번호, group[perm[i]]
+	vector<int> group(n + 1);
+	group[n] = -1;
+	for (int i = 0; i < n; ++i) group[i] = s[i];
+	//t를 기준으로 한 group이 주어짐 -> 2t를 기준으로 perm을 정렬
+	//-> 2t를 기준으로 한 group 얻음
+	while (t < n) {
+		//1을 기준으로 한 group이 주어져있으므로 2를 기준으로 정렬된 perm을
+		//얻는것부터 시작한다.
+		Compare compare(group, t);
+		sort(perm.begin(), perm.end(), compare);
+		//2t를 기준으로 한 group을 구한다.
+		vector<int> newGroup(n + 1);
+		newGroup[n] = -1;
+		newGroup[perm[0]] = 0;
+		for (int i = 1; i < n; ++i) {
+			if (compare(perm[i - 1], perm[i]))
+				newGroup[perm[i]] = newGroup[perm[i - 1]] + 1;
+			else
+				newGroup[perm[i]] = newGroup[perm[i - 1]];
+		}
+		group = newGroup;
+		t *= 2;
+	}
+	return perm;
+}
+//s의 lcp를 반환한다.
+vector<int> LCP(const string& s) {
+	int n = s.size();
+	vector<int> suffixArr = getSuffixArray(s);
+	vector<int> lcp(n);
+	lcp[0] = -1;
+	vector<int> rank(n);
+	for (int i = 0; i < n; ++i)
+		rank[suffixArr[i]] = i;
+	int match = 0;
+	//s[begin...] 와 s[suffixArr[rank[begin]-1]...]이 match까지 일치한다면,
+	//s[begin+1...]도 최소 match까지 일치하는 공통접두사가 존재한다는것을 확신할수있다.
+	for (int begin = 0; begin < n; ++begin) {
+		if (rank[begin] > 0) {
+			int prev = suffixArr[rank[begin] - 1];
+			while (s[match] == s[prev + (match - begin)])
+				++match;
+			lcp[rank[begin]] = match - begin;
+		}
+		if (begin == match)
+			++match;
+	}
+	return lcp;
+}
+//k번 이상 출현하는 s의 부분 문자열 중 최대 길이를 찾는다.
+int longestFrequent(int k, const string& s) {
+	int n = s.size();
+	vector<int> suffixArr = getSuffixArray(s);
+	vector<int> lcp = LCP(s);
+	//positive[i]: i까지 lcp가 양수상태를 연속해서 얼마나 지속해왔는지 기록
+	vector<int> positive(n);
+	int p = 0;
+	for (int i = 1; i < n; ++i) {
+		if (lcp[i] > 0)
+			positive[i] = ++p;
+		else {
+			p = 0;
+			positive[i] = 0;
+		}
+	}
+	//k =< positive[i]+1 일 때, 
+	//lcp[i-k+2] 가 곧 k번 이상 출현하는 s의 부분 문자열의 길이이다.
+	int ret = 0;
+	for (int i = 1; i < n; ++i) {
+		if (positive[i] + 1 >= k)
+			ret = max(ret, lcp[i - k + 2]);
+	}
+	return ret;
+}
+int main(void) {
+	int k;
+	string s;
+	cin >> k;
+	cin >> s;
+	if (k != -1)
+		cout << longestFrequent(k, s);
+	else
+		cout << s;
+}

@@ -1,0 +1,52 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<algorithm>
+#include<string>
+#include<cassert>
+#include<queue>
+#include<memory.h>
+#include<cmath>
+using namespace std;
+const int INF = 987654321;
+int n, k, m, l;
+//prerequisite[i]: i번째 과목의 선수과목의 집합
+int prerequisite[12];
+//classes[i]: i번째 학기에 개설되는 과목의 집합
+int classes[10];
+int cache[10][1 << 12];
+//n의 켜진 비트의 수를 반환한다.
+int bitCount(int n) {
+	if (n == 0) return 0;
+	return n % 2 + bitCount(n / 2);
+}
+//이번학기 semester, 지금까지 들은 과목 taken이 주어질 때,
+//다녀야 할 최소 학기 수를 반환한다.
+//m학기 내에 졸업할 수 없는 경우 INF를 반환한다.
+int graduate(int semester, int taken) {
+	//기저: k개 이상의 강의를 들은 경우
+	if (bitCount(taken) >= k) return 0;
+	//기저: semester가 모두 지난 경우
+	if (semester >= m) return INF;
+	//메모이제이션 
+	int& ret = cache[semester][taken];
+	if (ret != -1) return ret;
+	//canTake: 현재 들을 수 있는 강의들의 집합
+	int canTake = (~taken & classes[semester]);
+	//선수과목을 다 듣지 않은것들은 걸러낸다.
+	for (int i = 0; i < n; ++i)
+		//i번 과목의 선수과목을 아직 다 해결하지 않았다면
+		if ((canTake & (1 << i)) && ((prerequisite[i] & taken) != prerequisite[i]))
+			//i번 과목을 canTake에서 지운다.
+			canTake = canTake & ~(1 << i);
+	//최대 l개의 강의만 이번 학기에 들을 수 있으므로
+	//canTake의 부분집합에 대해 재귀호출을 실행한다.
+	ret = INF;
+	for (int subset = canTake; subset; subset = (canTake & (subset - 1))) {
+		if (bitCount(subset) > l) continue;
+		ret = min(ret, 1 + graduate(semester + 1, taken | canTake));
+	}
+	//이번학기에 아무것도 듣지 않을 경우(canTake=0)
+	ret = min(ret, graduate(semester + 1, taken));
+	return ret;
+}

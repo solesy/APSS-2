@@ -1,0 +1,92 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+#include <time.h>
+using namespace std;
+//t를 기준으로한 group이 주어졌을때,
+//2t를 기준으로 한 group[perm]의 대소를 비교한다. 
+//perm1이 배정되어야할 그룹 < perm2가 배정되어야할 그룹
+//일때 참을 반환한다.
+struct Compare {
+	const vector<int>& group;
+	int t;
+	Compare(const vector<int>& _group, int _t) :group(_group), t(_t) {}
+	bool operator()(int perm1, int perm2) {//functor
+		if (group[perm1] != group[perm2])
+			return group[perm1] < group[perm2];
+		//t+1 부터 새로 비교된다. out of range 조심.
+		else
+			return group[perm1 + t] < group[perm2 + t];
+	}
+};
+//t를 기준으로 한 group이 주어짐 -> 
+//2t를 기준으로 정렬된 perm 얻음 -> 2t를 기준으로 한 group 얻음
+vector<int> getSuffixArray(const string& s) {
+	int n = s.size();
+	int t = 1;
+	vector<int> perm(n);
+	for (int i = 0; i < n; ++i) perm[i] = i;
+	vector<int> group(n + 1);
+	group[n] = -1;//out of range가 되었을때 가장 작은값
+	for (int i = 0; i < n; ++i) group[i] = s[i];
+	//1를 기준으로 한 group은 주어졌으므로 2를 기준으로 정렬된 perm을
+	//구하는것부터 시작된다.
+	while (t < n) {
+		//t를 기준으로 한 그룹이 주어져있다.
+		//2t를 기준으로 perm을 group에대한 오름차순으로 정렬한다.
+		Compare compare2T(group, t);
+		sort(perm.begin(), perm.end(), compare2T);
+		//2t를 기준으로 한 group을 새로 얻는다.
+		vector<int> newGroup(n + 1);
+		newGroup[n] = -1;
+		newGroup[perm[0]] = 0;//제일 위의 그룹은 0
+		for (int i = 1; i < n; ++i) {
+			//perm은 2t에 대해 정렬된 상태이다.
+			//perm[i]가 perm[i-1]보다 되어야할 그룹이 큰 경우
+			if (compare2T(perm[i - 1], perm[i]))
+				newGroup[perm[i]] = newGroup[perm[i - 1]] + 1;
+			else
+				newGroup[perm[i]] = newGroup[perm[i - 1]];
+		}
+		group = newGroup;
+		t *= 2;
+	}
+	return perm;
+}
+//lcp를 반환한다.
+vector<int> LCP(const string& s) {
+	int n = s.size();
+	//s의 접미사 배열을 얻는다.
+	vector<int> suffixArr = getSuffixArray(s);
+	vector<int> lcp(n);
+	lcp[0] = -1;
+	vector<int> rank(n);//getSuffixArray 종료시의 group과 같다.
+	for (int i = 0; i < n; ++i)
+		rank[suffixArr[i]] = i;
+	//s[begin...]이 s[prev...]과 match-begin의 공통접두사가 있다면,
+	//s[begin+1...]은 아무리 못해도 match-(begin+1)의 공통접두사가 있다고
+	//확신할 수 있다.
+	//따라서 match는 절대 감소하지 않는다. O(n)
+	int match = 0;
+	for (int begin = 0; begin < n; ++begin) {
+		//lcp[0]은 정의되지 않는다.
+		if (rank[begin] > 0) {
+			int prev = suffixArr[rank[begin] - 1];
+			while (s[match] == s[prev + (match - begin)])
+				++match;
+			lcp[rank[begin]] = match - begin;
+		}
+		//match>=begin
+		if (begin == match)
+			++match;
+	}
+	return lcp;
+}

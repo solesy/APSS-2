@@ -1,0 +1,90 @@
+#include<iostream>
+#include<stdio.h>
+#include<vector>
+#include<stack>
+#include<queue>
+#include<list>
+#include<string>
+#include<algorithm>
+#include<cassert>
+#include<memory.h>
+#include<cmath>
+#include <time.h>
+using namespace std;
+//N의 p[]를 계산한다.
+//p[i]: N[...i]의 접미사도 되고 접두사도 되는 문자열의 최대 길이
+vector<int> getPartialMatch2(const string& N) {
+	int m = N.size();
+	int begin = 1, match = 1;
+	vector<int> pi(m, 0);
+	//begin과 match는 줄어드는 일이 없고
+	//무조건 한 루프에 둘중 하나는 증가한다.
+	while (match < m) {
+		//비교하는 수가 같은경우 match를 증가시킨다.
+		//pi[match]도 여기서 결정난다.
+		if (N[match - begin] == N[match]) {
+			pi[match] = match - begin + 1;
+			++match;
+		}
+		else {
+			if (begin == match) {
+				++begin;
+				++match;
+			}
+			//begin의 위치를 점프시킬 곳이 있으므로 점프시킨다.
+			//pi[match - begin - 1]은 이미 구한 값이다.
+			else
+				begin = match - pi[match - begin - 1];
+		}
+	}
+	return pi;
+}
+//getPartialMatch2를 활용하는 kmpSearch2
+//orignal+original에서 target을 찾고, 제일 길게 겹치는 길이를 반환한다.
+int kmpSearch2(const string& original, const string& target) {
+	int begin = 1, match = 1;
+	int m = original.size();
+	int n = target.size();
+	int ret = 0;
+	vector<int> pi = getPartialMatch2(target);
+	while (match < m) {
+		if (original[match] == target[match - begin]) {
+			++match;
+			//target을 한번 찾으면 그뒤는 찾을 이유가 없다.
+			if (match - begin == n) { 
+				ret = n - begin;
+				break;
+			}
+		}
+		else {
+			if (match == begin) {
+				++match;
+				++begin;
+			}
+			else
+				begin = match - pi[match - begin - 1];
+		}
+	}
+	return ret;
+}
+
+//original문자열을 target으로 맞출려면 돌려야하는 최소횟수를 반환한다.
+//clock=0이면 시계방향, clock=1이면 반시계방향이다.
+int shift(const string& original, const string& target, int clock) {
+	return clock == 0 ? kmpSearch2(original + original, target) :
+		original.size() - kmpSearch2(original + original, target);
+}
+int main(void) {
+	int n;
+	int ans = 0;
+	cin >> n;
+	string original;
+	vector<string> target(n);
+	cin >> original;
+	for (int i = 0; i < n; ++i) {
+		cin >> target[i];
+		ans += shift(original, target[i], i % 2);
+		original = target[i];
+	}
+	cout << ans;
+}
